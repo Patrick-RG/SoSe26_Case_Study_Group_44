@@ -1,0 +1,6 @@
+# Ignore all files in the data directory
+data/*
+
+# EXCEPTION: Do not ignore the README or gitkeep files in the data directory
+!data/README.md
+!data/.gitkeep
