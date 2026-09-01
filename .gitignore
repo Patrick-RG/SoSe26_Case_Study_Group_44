@@ -5,6 +5,7 @@ KPI_10_views.ipynb
 old_app/*
 old_notebooks/*
 /SoSe26_Case_Study_finalData_Group_44.csv
+temp/*
 
 # EXCEPTION: Do not ignore the README or gitkeep files in the data directory
 !data/README.md
