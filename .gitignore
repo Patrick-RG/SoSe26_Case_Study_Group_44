@@ -1,7 +1,9 @@
 # Ignore all files in the data directory
 data/*
 SoSe26_General_Tasks_Group_44_draft.ipynb
+Instructions-PDFs (to-be-deleted)/*
 
 # EXCEPTION: Do not ignore the README or gitkeep files in the data directory
 !data/README.md
 !data/.gitkeep
+
