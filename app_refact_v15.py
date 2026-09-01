@@ -9,9 +9,7 @@ import streamlit as st
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_FILENAME = "SoSe26_Case_Study_finalData_Group_44.csv"
-# Support both folder spellings so the app also runs on case-sensitive systems.
-DATA_CANDIDATES = (BASE_DIR / "Data" / DATA_FILENAME, BASE_DIR / "data" / DATA_FILENAME)
-DATA_PATH = next((path for path in DATA_CANDIDATES if path.exists()), DATA_CANDIDATES[0])
+DATA_PATH = BASE_DIR / DATA_FILENAME
 WWW_DIR = BASE_DIR / "www"
 CSS_PATH = WWW_DIR / "styles.css"
 FONT_DIR = WWW_DIR / "fonts"
@@ -600,7 +598,7 @@ def aggregate_supplier_quality(data):
     return result
 
 
-# Use the count to see where most defective vehicles come from and the rate to compare plants with different production volumes.
+# Absolute counts show field burden, while relative rates make plants comparable despite different production volumes.
 def make_plant_bar_chart(data, rate=False):
     if rate:
         value = "Defect_Rate"
@@ -832,7 +830,7 @@ def make_component_year_chart(data, selected_component, roles):
     return style_figure(fig, height=440)
 
 
-# Not every Tier-1 plant supplies every component type, so existing bars are centered without (preventing ugly empty slots).
+# Not every Tier-1 plant supplies every component type, so existing bars are centered without empty slots.
 def build_sparse_supplier_positions(data, bar_width=0.18):
     plot_data = data.sort_values(["Component_Type", "Supplier_Label"]).copy()
     component_types = plot_data["Component_Type"].dropna().astype(str).unique().tolist()
@@ -1004,7 +1002,7 @@ def render_overview_metrics(plant_kpi):
     return absolute, relative
 
 
-# The recommendation prioritizes relative defect rate and at the same time still showing the plant with the largest absolute defect.
+# The recommendation prioritizes relative defect rate, while still showing the plant with the largest absolute burden.
 def render_audit_recommendation(absolute, relative):
     recommended = plant_label(relative["OEM_Plant"], relative["OEM_City"])
     absolute_label = plant_label(absolute["OEM_Plant"], absolute["OEM_City"])
@@ -1175,7 +1173,7 @@ def calculate_pagination(total_rows, page_size, page):
     return total_pages, start_row, min(start_row + page_size, total_rows)
 
 
-# Paginating the complete final dataset to avoid rendering millions of rows at once.
+# Pagination keeps the complete final dataset accessible without rendering millions of rows at once.
 def render_final_data(plant_summary):
     render_section_title("Final Dataset")
     render_text_block(
