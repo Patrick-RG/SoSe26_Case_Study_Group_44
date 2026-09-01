@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="252" height="252" viewBox="0 0 252 252" role="img" aria-labelledby="title desc">
+  <title id="title">Group 44 logo</title>
+  <desc id="desc">Minimalist geometric double-four symbol with a subtle quality process line.</desc>
+
+  <rect width="252" height="252" rx="44" fill="#101828"/>
+
+  <!-- Geometric double 4 -->
+  <path d="M36 139 82 61h31l-43 73h39v-33h27v33h18v27h-18v34h-27v-34H36z" fill="#FFFFFF"/>
+  <path d="M116 139 162 61h31l-43 73h39v-33h27v33h18v27h-18v34h-27v-34h-73z" fill="#2E90FA"/>
+
+  <!-- Quality/process line -->
+  <path d="M39 218h52l15-14 19 21 23-30 20 23h45" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="213" cy="218" r="7" fill="#2E90FA"/>
+</svg>
