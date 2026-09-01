@@ -1,9 +1,10 @@
 # Ignore all files in the data directory
-data/*
-SoSe26_General_Tasks_Group_44_draft.ipynb
-Instructions-PDFs (to-be-deleted)/*
+Data/*
+SoSe26_Case_Study_finalData_Group_44.csv
 
 # EXCEPTION: Do not ignore the README or gitkeep files in the data directory
-!data/README.md
-!data/.gitkeep
+!Data/README.md
+!Data/.gitkeep
+
+.vscode/
 
