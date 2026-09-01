@@ -8,7 +8,10 @@ import streamlit as st
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_PATH = BASE_DIR / "Data" / "SoSe26_Case_Study_finalData_Group_44.csv"
+DATA_FILENAME = "SoSe26_Case_Study_finalData_Group_44.csv"
+# Support both folder spellings so the app also runs on case-sensitive systems.
+DATA_CANDIDATES = (BASE_DIR / "Data" / DATA_FILENAME, BASE_DIR / "data" / DATA_FILENAME)
+DATA_PATH = next((path for path in DATA_CANDIDATES if path.exists()), DATA_CANDIDATES[0])
 WWW_DIR = BASE_DIR / "www"
 CSS_PATH = WWW_DIR / "styles.css"
 FONT_DIR = WWW_DIR / "fonts"
@@ -114,6 +117,7 @@ def load_css():
         st.error(f"Stylesheet not found:\n\n{CSS_PATH}")
         st.stop()
 
+    # Embed the bundled fonts so Source Sans Pro does not depend on the local machine.
     font_faces = []
     for filename, weight in FONT_FILES:
         path = FONT_DIR / filename
@@ -227,6 +231,7 @@ def prepare_role_data(chunk, role):
     return result
 
 
+# Component roles are read from the dataset structure instead of being hardcoded.
 def discover_component_roles(columns):
     column_set = set(columns)
     roles = []
@@ -267,11 +272,13 @@ def defect_columns(roles):
     ]
 
 
+# Cache the prepared summaries so changing filters does not make the app reread the full CSV.
 @st.cache_data(show_spinner="Preparing dashboard data...")
 def load_dashboard_data():
     _, roles = load_schema()
     plant_parts, component_parts, role_year_parts = [], [], []
 
+    # The final dataset is large, so only the columns needed for the dashboard are read in chunks.
     for chunk in pd.read_csv(
         DATA_PATH,
         usecols=analysis_columns(roles),
@@ -281,6 +288,7 @@ def load_dashboard_data():
         chunk["Vehicle_Production_Year"] = pd.to_numeric(
             chunk["Vehicle_Production_Year"], errors="coerce"
         )
+        # Normalizing defect flags to 0/1 keeps the later sums and rates consistent.
         for column in defect_columns(roles):
             chunk[column] = (
                 pd.to_numeric(chunk[column], errors="coerce")
@@ -288,6 +296,7 @@ def load_dashboard_data():
                 .astype("int8")
             )
 
+        # Aggregate each chunk immediately so the full vehicle-level table never has to stay in memory.
         plant_parts.append(group_aggregate(chunk, FILTER_COLUMNS, PLANT_RAW_AGG))
         for role in roles:
             role_data = prepare_role_data(chunk, role)
@@ -316,6 +325,7 @@ def load_dashboard_data():
     return plant, component, role_year, roles
 
 
+# The Final Data page reads only the requested slice instead of loading all rows into the browser.
 @st.cache_data(show_spinner=False)
 def load_raw_page(start, rows):
     columns, _ = load_schema()
@@ -481,6 +491,7 @@ def render_filters(plant_summary):
 
 
 def apply_filters(data, filters):
+    # An empty multiselect means "All", so that field is only filtered after a user makes a selection.
     mask = pd.Series(True, index=data.index)
     mappings = {
         "oems": "OEM",
@@ -511,6 +522,7 @@ def make_plant_kpi(data):
     )
 
 
+# Calculate the yearly rates from each year's own production volume.
 def aggregate_yearly_vehicle(data):
     return summarize_vehicle(
         data,
@@ -518,6 +530,7 @@ def aggregate_yearly_vehicle(data):
     )
 
 
+# Effective component defects use the final effective flag, which already includes direct and part-derived defects.
 def aggregate_component_quality(data):
     result = sum_grouped(
         data,
@@ -535,6 +548,7 @@ def aggregate_component_quality(data):
     )
 
 
+# Use the component's own effective defect counts here, not the overall vehicle defect flag.
 def aggregate_component_trend(data):
     result = sum_grouped(
         data,
@@ -563,6 +577,7 @@ def aggregate_component_by_plant(data):
     return add_plant_labels(result)
 
 
+# Summarize each Tier-1 plant by component type before comparing supplier defect rates.
 def aggregate_supplier_quality(data):
     result = sum_grouped(
         data,
@@ -585,6 +600,7 @@ def aggregate_supplier_quality(data):
     return result
 
 
+# Use the count to see where most defective vehicles come from and the rate to compare plants with different production volumes.
 def make_plant_bar_chart(data, rate=False):
     if rate:
         value = "Defect_Rate"
@@ -623,7 +639,7 @@ def make_plant_bar_chart(data, rate=False):
         cliponaxis=False,
         hovertemplate=hover,
     )
-    fig.update_xaxes(title=None)
+    fig.update_xaxes(title="Production Plant")
     if rate:
         set_rate_axis(fig)
     else:
@@ -696,7 +712,7 @@ def make_effective_component_chart(data, roles):
         ),
     )
     fig.update_layout(showlegend=False)
-    fig.update_xaxes(title=None)
+    fig.update_xaxes(title="Component")
     set_rate_axis(fig)
     return style_figure(fig)
 
@@ -727,7 +743,7 @@ def make_defect_source_chart(data):
     fig.update_traces(
         hovertemplate="<b>%{x}</b><br>%{fullData.name}: %{y:.2f}%<extra></extra>"
     )
-    fig.update_xaxes(title=None)
+    fig.update_xaxes(title="Component")
     set_rate_axis(fig)
     return style_figure(fig)
 
@@ -816,6 +832,7 @@ def make_component_year_chart(data, selected_component, roles):
     return style_figure(fig, height=440)
 
 
+# Not every Tier-1 plant supplies every component type, so existing bars are centered without (preventing ugly empty slots).
 def build_sparse_supplier_positions(data, bar_width=0.18):
     plot_data = data.sort_values(["Component_Type", "Supplier_Label"]).copy()
     component_types = plot_data["Component_Type"].dropna().astype(str).unique().tolist()
@@ -987,6 +1004,7 @@ def render_overview_metrics(plant_kpi):
     return absolute, relative
 
 
+# The recommendation prioritizes relative defect rate and at the same time still showing the plant with the largest absolute defect.
 def render_audit_recommendation(absolute, relative):
     recommended = plant_label(relative["OEM_Plant"], relative["OEM_City"])
     absolute_label = plant_label(absolute["OEM_Plant"], absolute["OEM_City"])
@@ -1157,6 +1175,7 @@ def calculate_pagination(total_rows, page_size, page):
     return total_pages, start_row, min(start_row + page_size, total_rows)
 
 
+# Paginating the complete final dataset to avoid rendering millions of rows at once.
 def render_final_data(plant_summary):
     render_section_title("Final Dataset")
     render_text_block(
@@ -1192,6 +1211,7 @@ def load_dashboard_or_stop():
         st.stop()
 
 
+# Main app flow: load cached summaries, apply global filters, then render only the selected section.
 def main():
     configure_page()
     ensure_data_exists()
